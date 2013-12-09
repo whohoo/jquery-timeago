@@ -14,6 +14,13 @@
  * Copyright (c) 2008-2013, Ryan McGeary (ryan -[at]- mcgeary [*dot*] org)
  */
 
+ /**
+  * 本地化调整.
+  * inWords function 增加 date对象做为第二参数.
+  * substitute function 把date对象传递进去
+  * 增加formatDigit()方法, 把数字转为两位数
+ */
+
 (function (factory) {
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
@@ -44,24 +51,24 @@
       strings: {
         prefixAgo: null,
         prefixFromNow: null,
-        suffixAgo: "ago",
+        suffixAgo: "",
         suffixFromNow: "from now",
-        seconds: "less than a minute",
-        minute: "about a minute",
-        minutes: "%d minutes",
-        hour: "about an hour",
-        hours: "about %d hours",
-        day: "a day",
-        days: "%d days",
-        month: "about a month",
-        months: "%d months",
-        year: "about a year",
-        years: "%d years",
+        seconds: "刚刚",
+        minute: "约1分钟前",
+        minutes: "%d 分钟前",
+        hour: "约1小时前",
+        hours:_outDate,
+        day: _outDate,
+        days: _outMonth,
+        month: _outMonth,
+        months: _outMonth,
+        year: _outYear,
+        years: _outYear,
         wordSeparator: " ",
         numbers: []
       }
     },
-    inWords: function(distanceMillis) {
+    inWords: function(distanceMillis, date) {
       var $l = this.settings.strings;
       var prefix = $l.prefixAgo;
       var suffix = $l.suffixAgo;
@@ -79,7 +86,7 @@
       var years = days / 365;
 
       function substitute(stringOrFunction, number) {
-        var string = $.isFunction(stringOrFunction) ? stringOrFunction(number, distanceMillis) : stringOrFunction;
+        var string = $.isFunction(stringOrFunction) ? stringOrFunction(number, distanceMillis, date) : stringOrFunction;
         var value = ($l.numbers && $l.numbers[number]) || number;
         return string.replace(/%d/i, value);
       }
@@ -115,6 +122,11 @@
     isTime: function(elem) {
       // jQuery's `is()` doesn't play well with HTML5 in IE
       return $(elem).get(0).tagName.toLowerCase() === "time"; // $(elem).is("time");
+    },  
+
+    //added by Wally
+    formatDigit: function (value){
+      return value>9 ? value : "0"+value;
     }
   });
 
@@ -171,13 +183,27 @@
   }
 
   function inWords(date) {
-    return $t.inWords(distance(date));
+    return $t.inWords(distance(date), date);
   }
 
   function distance(date) {
     return (new Date().getTime() - date.getTime());
   }
 
+  function _outDate(number, distanceMillis, date){
+    var d  = new Date();
+    return (d.getDate()==date.getDate() ? "今天 " : "昨天 ") + $t.formatDigit(date.getHours())+":"+$t.formatDigit(date.getMinutes());
+  } 
+
+  function _outMonth(number, distanceMillis, date){
+    var d  = new Date();
+    return  (d.getFullYear()==date.getFullYear() ? "" : "去年 ")+(date.getMonth()+1)+"月"+$t.formatDigit(date.getDate())+"日";
+  } 
+
+
+  function _outYear(number, distanceMillis, date){
+    return  date.getFullYear()+"年"+(date.getMonth()+1)+"月"+formatDigit(date.getDate())+"日";
+  } 
   // fix for IE6 suckage
   document.createElement("abbr");
   document.createElement("time");
